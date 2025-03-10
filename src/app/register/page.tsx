@@ -17,7 +17,7 @@ const RegisterPage = () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       try {
         // Use the correct endpoint here
-        const response = await fetch("http://localhost:8000/users"); 
+        const response = await fetch("https://inventory-management-app-v2.onrender.com/users"); 
         if (!response.ok) {
           throw new Error("Failed to fetch users.");
         }
@@ -45,7 +45,7 @@ const RegisterPage = () => {
     }
 
   
-    const response = await fetch("http://localhost:8000/auth/register", {
+    const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
