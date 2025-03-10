@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.app {
+  height: 100%;
+  width: 100%;
+  @apply text-sm;
+  @apply bg-gray-500;
+  @apply text-gray-900;
+}
+
+@media (min-width: 768px) {
+  .custom-grid-rows {
+    grid-template-rows: repeat(8, 20vh);
+  }
+}
+
+@media (min-width: 1280px) {
+  .custom-grid-rows {
+    grid-template-rows: repeat(8, 7.5vh);
+  }
+}
+
+/* Add this to your global CSS file if not using Tailwind's @media utilities */
+@media (min-width: 1280px) {
+  .chart-container {
+    height: 180px !important; /* Reduce height for full-screen PC */
+    position: relative;
+    bottom: 40px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .chart-container {
+    height: 180px !important; /* Reduce height for full-screen PC */
+    position: relative;
+    bottom: 40px;
+  }
+}@media (min-width: 1280px) {
+  .expense-summary {
+    position: relative;
+    bottom: 20px;
+  }
+}

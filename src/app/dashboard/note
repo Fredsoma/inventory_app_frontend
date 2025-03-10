@@ -1,0 +1,231 @@
+{/*
+import { useGetSalesQuery } from "@/state/api";
+import { TrendingUp, TrendingDown, X } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../(components)/ui/Dialog";
+
+const CardSalesSummary = () => {
+  const { data: salesData, isLoading, isError } = useGetSalesQuery();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState("Monday");
+  const [selectedMonth, setSelectedMonth] = useState("January");
+  const [selectedWeek, setSelectedWeek] = useState("Week 1");
+
+
+  const sales = Array.isArray(salesData) ? salesData : [];
+
+  // Prepare sales data for Monday to Sunday
+  const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const salesByDay = weekDays.map((day) => ({
+    day,
+    date: "", // Add a field for full date
+    totalAmount: 0,
+    bestProduct: "N/A",
+    bestProductAmount: 0,
+    productSales: {} as Record<string, number>, // Tracks sales per product
+  }));
+
+  sales.forEach((sale) => {
+    const saleDate = new Date(sale.saleDate);
+    const dayName = saleDate.toLocaleDateString("en-US", { weekday: "long" });
+    const formattedDate = saleDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const dayData = salesByDay.find((d) => d.day === dayName);
+    if (dayData) {
+      dayData.date = formattedDate;
+      dayData.totalAmount += sale.totalAmount || 0;
+      if (sale.productName) {
+        dayData.productSales[sale.productName] =
+          (dayData.productSales[sale.productName] || 0) + sale.totalAmount;
+      }
+    }
+  });
+
+  // Determine best-selling product per day
+  salesByDay.forEach((day) => {
+    const bestProductEntry = Object.entries(day.productSales).reduce(
+      (best, [product, amount]) => (amount > best.amount ? { name: product, amount } : best),
+      { name: "", amount: 0 }
+    );
+
+    day.bestProduct = bestProductEntry.name || "N/A";
+    day.bestProductAmount = bestProductEntry.amount;
+  });
+
+  // Find most productive sales day
+  const mostProductiveDay = salesByDay.reduce(
+    (best, day) => (day.totalAmount > best.totalAmount ? day : best),
+    { day: "N/A", totalAmount: 0 }
+  );
+
+  // Store the week data as 'week1'
+  const week1 = salesByDay;
+
+  const selectedDayIndex = weekDays.indexOf(selectedDay);
+  const previousDayIndex = selectedDayIndex > 0 ? selectedDayIndex - 1 : null;
+  const selectedDayData = salesByDay[selectedDayIndex];
+  const previousDayData = previousDayIndex !== null ? salesByDay[previousDayIndex] : null;
+
+  // Calculate sales difference
+  let salesDifference = 0;
+  let salesTrend = "No Data";
+  if (previousDayData && selectedDayData) {
+    salesDifference = selectedDayData.totalAmount - previousDayData.totalAmount;
+    salesTrend = salesDifference > 0 ? "Increase" : salesDifference < 0 ? "Decrease" : "No Change";
+  }
+
+  // Calculate total sales for the week
+  const totalWeekSales = salesByDay.reduce((total, day) => total + day.totalAmount, 0);
+
+  if (isError) return <div className="m-5">Failed to fetch data</div>;
+
+  return (
+    <>
+      {/* Sales Summary Card - Opens Modal */} {/*
+      <div
+        className="bg-white shadow-md rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all"
+        onClick={() => setIsModalOpen(true)}
+      >
+        <h2 className="text-lg font-semibold">Sales Summary</h2>
+        <p className="text-2xl font-extrabold">
+          ${(salesByDay.reduce((sum, day) => sum + day.totalAmount, 0) / 200000).toFixed(2)}m
+        </p>
+      </div>
+
+      {/* Detailed Sales Modal */} {/*
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-7xl">
+          <DialogHeader>
+            <div className="flex justify-evenly gap-2">
+            <DialogTitle>Detailed Sales Insights for month ??</DialogTitle>{/* or we can put Detailed Sales Insights for month of February for example the Detailed Sales Insights for the actual month name in question */} {/*
+            <div className="mb-4">
+            <label className="text-gray-500 text-sm mr-2">Select Month:</label> {/* select the month in question for which you whant to views its sales weeks, we already know than in the week we have access to the days and see their sales with many other things to calculate the total sale of the week */}
+            {/*
+            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+  {["January", "February", "March"].map((month) => (
+    <option key={month} value={month}>{month}</option>
+  ))}
+</select>
+
+          </div>
+          <div className="p-4 bg-gray-100 rounded-lg mb-4">
+            <h3 className="font-semibold">Total Sales for Month ??</h3> {/* or we can put Total Sales for month of February for example the total sales of the actual month name in question */} 
+            {/*
+            <p className="text-lg">${totalWeekSales.toFixed(2)}</p>
+          </div>
+            </div>
+            
+            <button className="absolute top-2 right-2" onClick={() => setIsModalOpen(false)}>
+              <X className="w-6 h-6" />
+            </button>
+          </DialogHeader>
+
+          {/* Total Sales for Week1 */} 
+          {/*
+          <div className="p-4 bg-gray-100 rounded-lg mb-4">
+            <h3 className="font-semibold">Total Sales for Week ??</h3>
+            <p className="text-lg">${totalWeekSales.toFixed(2)}</p>
+          </div>
+
+          {/* Dropdown for day selection */} {/*
+          <div className="flex gap-2">
+          <div className="mb-4">
+            <label className="text-gray-500 text-sm mr-2">Select Day:</label>
+            <select
+              className="shadow-sm border border-gray-300 bg-white p-2 rounded"
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value)}
+            >
+              {weekDays.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="text-gray-500 text-sm mr-2">Select Week:</label>
+            <select
+              className="shadow-sm border border-gray-300 bg-white p-2 rounded"
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value)}
+            >
+              {weekDays.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
+            </select>
+          </div>
+          </div>
+         
+
+          {/* Sales Chart */}
+          {/*
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={salesByDay}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" />
+              <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`} />
+              <Tooltip 
+                formatter={(value, name, props) => [
+                  `$${value.toLocaleString("en")}`,
+                  `Sales on ${props.payload.date || "N/A"}` // Display full date in tooltip
+                ]} 
+              />
+              <Bar dataKey="totalAmount" fill="#3182ce" barSize={20} radius={[10, 10, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+
+          {/* Extra Insights */} {/*
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+            {/* Best Selling Product */} {/*
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-semibold">Best-Selling Product</h3>
+              <p className="text-lg">{selectedDayData?.bestProduct || "N/A"}</p>
+              <p className="text-sm text-gray-500">
+                Sales: ${selectedDayData?.bestProductAmount?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+
+            {/* Total Amount Sold */} {/*
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-semibold">Total Amount Sold</h3>
+              <p className="text-lg">${selectedDayData?.totalAmount.toFixed(2) || "0.00"}</p>
+            </div>
+
+            {/* Sales Difference from Previous Day */} {/*
+            <div className="p-4 bg-gray-100 rounded-lg flex flex-col items-center">
+              <h3 className="font-semibold">Sales Change</h3>
+              <p className={`text-lg ${salesDifference >= 0 ? "text-green-600" : "text-red-600"}`}>
+                {salesDifference >= 0 ? <TrendingUp className="inline-block w-5 h-5" /> : <TrendingDown className="inline-block w-5 h-5" />}
+                ${Math.abs(salesDifference).toFixed(2)}
+              </p>
+              <p className="text-sm text-gray-500">{salesTrend}</p>
+            </div>
+
+            {/* Most Productive Day */} {/*
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-semibold">Most Productive Day</h3>
+              <p className="text-lg">{mostProductiveDay.day}</p>
+              <p className="text-sm text-gray-500">
+                Sales: ${mostProductiveDay.totalAmount.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default CardSalesSummary; */}
