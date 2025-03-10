@@ -6,23 +6,27 @@ const nextConfig = {
         protocol: "https",
         hostname: "gateway.pinata.cloud",
         port: "",
-        pathname: "/ipfs/**", // Matches IPFS paths for Pinata
+        pathname: "/ipfs/**",
       },
       {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
         port: "",
-        pathname: "/v0/b/oprahv1.appspot.com/o/**", // Firebase image path
+        pathname: "/v0/b/oprahv1.appspot.com/o/**",
       },
       {
         protocol: "https",
         hostname: "www.pinterest.com",
         port: "",
-        pathname: "/pin/**", // Pinterest image path
+        pathname: "/pin/**",
       },
     ],
   },
-  // Other Next.js configuration options
+  output: "export", // Enables static HTML export
+  images: {
+    unoptimized: true, // Fixes image optimization issues for static export
+  },
+  trailingSlash: true, // Ensures correct routing for Netlify
 };
 
 export default nextConfig;
