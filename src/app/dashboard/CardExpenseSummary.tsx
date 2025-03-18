@@ -3,18 +3,20 @@
 import React from "react";
 import { useGetExpensesQuery } from "@/state/api";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { useTranslation } from "react-i18next";
 
 const colors = ["#00C49F", "#0088FE", "#FFBB28"];
 
 const CardExpenseSummary = () => {
+  const { t } = useTranslation();
   const { data: expenses, isLoading, isError } = useGetExpensesQuery();
 
   if (isLoading) {
-    return <div className="m-5">Loading...</div>;
+    return <div className="m-5">{t("expenseSummary.loading")}</div>;
   }
 
   if (isError || !expenses) {
-    return <div className="text-center text-red-500 py-4">Failed to fetch expenses</div>;
+    return <div className="text-center text-red-500 py-4">{t("expenseSummary.error")}</div>;
   }
 
   // Calculate total expenses
@@ -23,19 +25,40 @@ const CardExpenseSummary = () => {
 
   // Summarize expenses by reason (or another field if preferred)
   const expenseSums = expenses.reduce<{ [key: string]: number }>((acc, expense) => {
-    const groupingKey = expense.reason || "Uncategorized";
-    if (!acc[groupingKey]) acc[groupingKey] = 0;
-    acc[groupingKey] += expense.amount || 0;
+    // If expense.reason is missing, use a default translated value
+    const rawKey = expense.reason || "uncategory";
+    // We leave rawKey as is and will translate later
+    if (!acc[rawKey]) acc[rawKey] = 0;
+    acc[rawKey] += expense.amount || 0;
     return acc;
   }, {});
 
-  // Prepare data for the pie chart
-  const expenseCategories = Object.entries(expenseSums).map(([name, value]) => ({ name, value }));
+  // Helper function to translate a category name
+  const translateCategory = (name: string) => {
+    // You can add more mappings as needed.
+    if (name === "Shop Supplies") {
+      return t("expenseSummary.shopSupplies");
+    } else if (name === "Salaries") {
+      return t("expenseSummary.salaries");
+    }
+    // For uncategorized or other values, you may want to provide a default translation
+    if (name === "uncategory") {
+      return t("expenseSummary.uncategory");
+    }
+    // Otherwise, return the original name if no translation is needed
+    return name;
+  };
+
+  // Prepare data for the pie chart with translated names
+  const expenseCategories = Object.entries(expenseSums).map(([name, value]) => ({
+    name: translateCategory(name),
+    value,
+  }));
 
   // Calculate average expense
   const averageExpense = expenses.length > 0 ? (totalExpenses / expenses.length).toFixed(2) : "0.00";
 
-  // Extract specific category totals
+  // Extract specific category totals using the raw keys (they might need translation in the footer as well)
   const shopSuppliesTotal = expenseSums["Shop Supplies"] || 0;
   const salariesTotal = expenseSums["Salaries"] || 0;
 
@@ -43,7 +66,7 @@ const CardExpenseSummary = () => {
     <div className="row-span-3 bg-white shadow-md rounded-2xl flex flex-col justify-between">
       {/* HEADER */}
       <div>
-        <h2 className="text-lg font-semibold mb-2 px-7 pt-5">Expense Summary</h2>
+        <h2 className="text-lg font-semibold mb-2 px-7 pt-5">{t("expenseSummary.title")}</h2>
         <hr />
       </div>
 
@@ -97,16 +120,16 @@ const CardExpenseSummary = () => {
         <div className="mt-3 flex justify-between items-center px-7 mb-4 expense-summary">
           <div className="pt-2">
             <p className="text-sm">
-              Average: <span className="font-semibold">{averageExpense} XAF</span>
+              {t("expenseSummary.average")}: <span className="font-semibold">{averageExpense} XAF</span>
             </p>
           </div>
-          {/* Display Totals for Specific Categories */}
+          {/* Display Totals for Specific Categories, translating here as well */}
           <div className="flex flex-col items-end">
             <p className="text-sm">
-              Shop Supplies: <span className="font-semibold">{shopSuppliesTotal.toFixed(2)} XAF</span>
+              {t("expenseSummary.shopSupplies")}: <span className="font-semibold">{shopSuppliesTotal.toFixed(2)} XAF</span>
             </p>
             <p className="text-sm">
-              Salaries: <span className="font-semibold">{salariesTotal.toFixed(2)} XAF</span>
+              {t("expenseSummary.salaries")}: <span className="font-semibold">{salariesTotal.toFixed(2)} XAF</span>
             </p>
           </div>
         </div>

@@ -3,31 +3,20 @@ import { ShoppingBag } from "lucide-react";
 import React from "react";
 import Rating from "../(components)/Rating";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 
 const CardPopularProducts = () => {
-  const { data: dashboardMetrics, isLoading: metricsLoading } = useGetDashboardMetricsQuery();
+  const { t } = useTranslation(); 
+  const { data: dashboardMetrics, isLoading: metricsLoading, error: metricsError } = useGetDashboardMetricsQuery();
   const { data: sales, isLoading: salesLoading } = useGetSalesQuery();
-
-  {/*
-  // Define an array of image URLs with unique tokens
-  const imageUrls = [
-    "https://firebasestorage.googleapis.com/v0/b/oprahv1.appspot.com/o/product1.png?alt=media&token=6a6866f9-23f9-4988-a2ae-746c8acd7e1b",
-    "https://firebasestorage.googleapis.com/v0/b/oprahv1.appspot.com/o/product2.png?alt=media&token=5274638f-7c32-4878-acca-b656eb86ea32",
-    "https://firebasestorage.googleapis.com/v0/b/oprahv1.appspot.com/o/product3.png?alt=media&token=f5e72b3b-3743-4d89-acc0-3ff182c69a60",
-  ]; */ }
+  console.log("Dashboard Metrics Data:", dashboardMetrics);
+  console.log("Dashboard Metrics Error:", metricsError);
 
   // Check loading states
-  if (metricsLoading || salesLoading) {
-    return <div className="m-5">Loading...</div>;
-  }
-
-  // Early return if sales data is undefined or empty
-  if (!sales || sales.length === 0) {
-    return <div className="m-5">No sales data available.</div>;
-  }
+  const isLoading = metricsLoading || salesLoading;
 
   // Create a map to aggregate sales data
-  const productSalesMap = sales.reduce((acc, sale) => {
+  const productSalesMap = sales?.reduce((acc, sale) => {
     const { productId, quantity, totalAmount } = sale;
 
     if (!acc[productId]) {
@@ -41,7 +30,7 @@ const CardPopularProducts = () => {
 
   // Create an array of popular products based on sales
   const popularProducts = (dashboardMetrics?.popularProducts || []).map(product => {
-    const salesData = productSalesMap[product.productId] || { quantity: 0, totalAmount: 0 };
+    const salesData = productSalesMap ? productSalesMap[product.productId] || { quantity: 0, totalAmount: 0 } : { quantity: 0, totalAmount: 0 };
     return {
       ...product,
       ...salesData,
@@ -51,11 +40,16 @@ const CardPopularProducts = () => {
   return (
     <div className="row-span-3 xl:row-span-6 bg-white shadow-md rounded-2xl pb-16">
       <h3 className="text-lg font-semibold px-7 pt-5 pb-2">
-        Popular Products
+      {t("popularProducts.title")}
       </h3>
       <hr />
       <div className="overflow-auto h-full">
-        {popularProducts.length > 0 ? (
+        {/* Show Loading state inside the container */}
+        {isLoading ? (
+          <div className="m-5 text-center text-gray-500">{t("popularProducts.loading")}</div>
+        ) : (!sales || sales.length === 0) ? (
+          <div className="m-5 text-center text-gray-500">{t("popularProducts.noSalesData")}</div>
+        ) : popularProducts.length > 0 ? (
           popularProducts.map((product) => (
             <div
               key={product.productId}
@@ -72,7 +66,7 @@ const CardPopularProducts = () => {
 
                 <div className="flex flex-col justify-between gap-1">
                   <div className="font-bold text-gray-700">
-                    {product.name || 'Unnamed Product'}
+                    {product.name || t("popularProducts.unnamedProduct")}
                   </div>
                   <div className="flex text-sm items-center">
                     <span className="font-bold text-blue-500 text-xs">
@@ -89,13 +83,13 @@ const CardPopularProducts = () => {
                   <ShoppingBag className="w-4 h-4" />
                 </button>
                 <span className="ml-2 font-bold text-green-600">
-                  Total Sales: {product.totalAmount.toFixed(2)} XAF Sold
+                {t("popularProducts.totalSales")}: {product.totalAmount.toFixed(2)} XAF  {t("popularProducts.soldtitle")}
                 </span>
               </div>
             </div>
           ))
         ) : (
-          <div className="m-5">No popular products available.</div>
+          <div className="m-5 text-center text-gray-500">{t("popularProducts.noProducts")}</div>
         )}
       </div>
     </div>

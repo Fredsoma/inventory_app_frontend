@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "recharts";
 import Navbar from "../(components)/Navbar"; 
+import { useTranslation } from "react-i18next";
 
 type AggregatedDataItem = {
   name: string;
@@ -25,10 +26,10 @@ type AggregatedData = {
 };
 
 const Expenses = () => {
+  const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
-  
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -49,73 +50,74 @@ const Expenses = () => {
   const aggregatedData: AggregatedDataItem[] = useMemo(() => {
     const filtered: AggregatedData = expenses
       .filter((expense) => {
-        const dataDate = new Date(expense.expenseDate).toISOString().split("T")[0];
+        const dataDate = new Date(expense.expenseDate)
+          .toISOString()
+          .split("T")[0];
         const matchesDate =
           !startDate ||
           !endDate ||
           (dataDate >= startDate && dataDate <= endDate);
         const matchesCategory =
           selectedCategory === "All" || expense.reason === selectedCategory;
-
         return matchesCategory && matchesDate;
       })
       .reduce((acc: AggregatedData, expense) => {
         const amount = expense.amount || 0;
-        const category = expense.reason || "Uncategorized";
+        const category = expense.reason || t("expenses.uncategory");
         if (!acc[category]) {
           acc[category] = { name: category, amount: 0 };
-          acc[category].color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+          acc[category].color = `#${Math.floor(Math.random() * 16777215).toString(
+            16
+          )}`;
         }
         acc[category].amount += amount;
         return acc;
       }, {});
-
     return Object.values(filtered);
-  }, [expenses, selectedCategory, startDate, endDate]);
+  }, [expenses, selectedCategory, startDate, endDate, t]);
 
   const classNames = {
     label: "block text-sm font-medium text-gray-700",
     selectInput:
-      "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md",
+      "mt-1 block w-full pl-3 pr-10 py-2 text-base text-gray-950 border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md",
   };
 
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
+    return <div>{t("expenses.loading")}</div>;
   }
 
   if (isLoading) {
-    return <div className="py-4">Loading...</div>;
+    return <div className="py-4">{t("expenses.loading")}</div>;
   }
 
   if (isError || !expensesData) {
     return (
       <div className="text-center text-red-500 py-4">
-        Failed to fetch expenses
+        {t("expenses.failfetch")}
       </div>
     );
   }
 
   return (
     <div>
-     
       <Navbar />
 
       <div className="mb-5">
-        <Header name="Expenses" />
+        <Header name={t("expenses.expenses")} />
         <p className="text-sm text-gray-500">
-          A visual representation of expenses over time.
+          {t("expenses.visualrepresentation")}
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div className="w-full md:w-1/3 bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4">
-            Filter by Category and Date
+            {t("expenses.filtercategory")}
           </h3>
           <div className="space-y-4">
             <div>
               <label htmlFor="category" className={classNames.label}>
-                Category
+                {t("expenses.category")}
               </label>
               <select
                 id="category"
@@ -124,15 +126,17 @@ const Expenses = () => {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                <option value="All">All</option>
-                <option value="Shop Supplies">Shop Supplies</option>
-                <option value="Salaries">Salaries</option>
+                <option value="All">{t("expenses.selectall")}</option>
+                <option value="Shop Supplies">
+                  {t("expenses.shopsupply")}
+                </option>
+                <option value="Salaries">{t("expenses.salary")}</option>
               </select>
             </div>
 
             <div>
               <label htmlFor="start-date" className={classNames.label}>
-                Start Date
+                {t("expenses.startdate")}
               </label>
               <input
                 type="date"
@@ -144,7 +148,7 @@ const Expenses = () => {
             </div>
             <div>
               <label htmlFor="end-date" className={classNames.label}>
-                End Date
+                {t("expenses.enddate")}
               </label>
               <input
                 type="date"
@@ -173,20 +177,28 @@ const Expenses = () => {
                 {aggregatedData.map((entry: AggregatedDataItem, index: number) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={index === activeIndex ? "rgb(29, 78, 216)" : entry.color}
+                    fill={
+                      index === activeIndex ? "rgb(29, 78, 216)" : entry.color
+                    }
                   />
                 ))}
               </Pie>
-              <Tooltip 
-    content={({ payload }) => {
-      if (payload && payload.length) {
-        const { amount } = payload[0].payload;
-        return <div>{`${amount} XAF`}</div>;
-      }
-      return null;
-    }} 
-  />
-              <Legend />
+              <Tooltip
+                content={({ payload }) => {
+                  if (payload && payload.length) {
+                    const { amount } = payload[0].payload;
+                    return <div>{`${amount} XAF`}</div>;
+                  }
+                  return null;
+                }}
+              />
+              <Legend
+                formatter={(value) => {
+                  if (value === "Shop Supplies") return t("expenses.shopsupply");
+                  if (value === "Salaries") return t("expenses.salary");
+                  return value;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>

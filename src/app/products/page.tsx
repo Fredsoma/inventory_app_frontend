@@ -10,6 +10,7 @@ import CreateProductModal from "./CreateProductModal";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import Navbar from "@/app/(components)/Navbar";
+import { useTranslation } from "react-i18next";
 
 type ProductFormData = {
   name: string;
@@ -26,7 +27,9 @@ const imageUrls = [
 ];
 
 const Products = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
@@ -44,8 +47,19 @@ const Products = () => {
     }
   }, [router]);
 
-  const { data: products, isLoading, isError, refetch  } = useGetProductsQuery(searchTerm, {
-    pollingInterval: 1000, // Fetch new data every 5 seconds
+  // Debounce logic
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Adjust the debounce delay as needed (500ms)
+
+    // Cleanup the timeout on component unmount or when searchTerm changes
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Fetch products with the debounced search term
+  const { data: products, isLoading, isError, refetch } = useGetProductsQuery(debouncedSearchTerm, {
+    pollingInterval: 1000, // Fetch new data every 1 second
   });
   const [createProduct] = useCreateProductMutation();
   const [updateProductStock] = useUpdateProductStockMutation(); // Use the updated stock mutation
@@ -53,60 +67,49 @@ const Products = () => {
   const handleCreateProduct = async (productData: ProductFormData) => {
     try {
       await createProduct(productData).unwrap();
-      toast.success("Product created successfully!", { duration: 4000 });
+      toast.success(t("product.productcreated"), { duration: 4000 });
     } catch {
-      toast.error("Failed to create product. Try again!", { duration: 4000 });
+      toast.error(t("product.failcreate"), { duration: 4000 });
     }
   };
 
-  const handleUpdateStock = async (productId: string, newStock: number | null, currentStock: number) => {
+  // Removed the unused "currentStock" parameter
+  const handleUpdateStock = async (productId: string, newStock: number | null) => {
     if (newStock === null || isNaN(newStock)) {
-      toast.error("Please enter a valid stock quantity.");
+      toast.error(t("product.validqty"));
       return;
     }
-  
+
     if (newStock < 0) {
-      toast.error("Stock quantity cannot be negative.");
+      toast.error(t("product.qtynegative"));
       return;
     }
-  
-    if (newStock < currentStock) {
-      toast.error("New stock quantity cannot be less than the current stock quantity.");
-      return;
-    }
-  
-    // Set the state to show loader
+
     setIsUpdatingStock(true);
-  
+
     try {
-      // Update stock in backend
-      await updateProductStock({ productId, stockQuantity: newStock }).unwrap(); // Make sure this hits the backend and updates the stock in your DB
-      
-      // After updating, refetch the products to reflect changes
-      await refetch(); // This is how you can refetch data with React Query if you're using it
-  
-      toast.success("Stock updated successfully!");
-      setEditingProduct(null); // Close the input field after updating
-      setNewStock(null); // Reset input field
+      await updateProductStock({ productId, stockQuantity: newStock }).unwrap();
+      await refetch(); // Refetch after stock update
+      toast.success(t("product.stockupdated"));
+      setEditingProduct(null);
+      setNewStock(null);
     } catch {
-      toast.error("Failed to update stock.");
+      toast.error(t("product.failupdated"));
     } finally {
-      // Reset the loading state
       setIsUpdatingStock(false);
     }
   };
-  
 
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
+    return <div>{t("product.loading")}</div>;
   }
 
   if (isLoading) {
-    return <div className="py-4">Loading...</div>;
+    return <div className="py-4">{t("product.loading")}</div>;
   }
 
   if (isError || !products) {
-    return <div className="text-center text-red-500 py-4">Failed to fetch products</div>;
+    return <div className="text-center text-red-500 py-4">{t("product.failfetchp")}</div>;
   }
 
   return (
@@ -121,7 +124,7 @@ const Products = () => {
           <SearchIcon className="w-5 h-5 text-gray-500 m-2" />
           <input
             className="w-full py-2 px-4 rounded bg-white"
-            placeholder="Search products..."
+            placeholder={t("product.searchp")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -130,12 +133,12 @@ const Products = () => {
 
       {/* HEADER BAR */}
       <div className="flex justify-between items-center mb-6">
-        <Header name="Products" />
+        <Header name={t("product.productheader")} />
         <button
           className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
           onClick={() => setIsModalOpen(true)}
         >
-          <PlusCircleIcon className="w-5 h-5 mr-2 !text-gray-200" /> Create Product
+          <PlusCircleIcon className="w-5 h-5 mr-2 !text-gray-200" /> {t("product.createp")}
         </button>
       </div>
 
@@ -153,7 +156,7 @@ const Products = () => {
               />
               <h3 className="text-lg text-gray-900 font-semibold">{product.name}</h3>
               <p className="text-gray-800">{product.price.toFixed(2)} XAF</p>
-              <div className="text-sm text-gray-600 mt-1">Stock: {product.stockQuantity}</div>
+              <div className="text-sm text-gray-600 mt-1">{t("product.stock")}: {product.stockQuantity}</div>
 
               {product.rating && (
                 <div className="flex items-center mt-2">
@@ -166,7 +169,7 @@ const Products = () => {
                 className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 onClick={() => setEditingProduct(product.productId)}
               >
-                Update Stock
+                {t("product.updatestock")}
               </button>
 
               {/* STOCK UPDATE INPUT FIELD */}
@@ -179,19 +182,18 @@ const Products = () => {
                       const value = parseInt(e.target.value, 10);
                       setNewStock(isNaN(value) ? null : value);
                     }}
-                    min={product.stockQuantity}
-                    className="border px-2 py-1 rounded w-20 text-center"
-                    placeholder="New stock"
+                    min={0} // Minimum of 0 to prevent negative values
+                    className="border px-2 py-1 rounded w-20 text-center text-gray-900  bg-white  placeholder-gray-400"
+                    placeholder={t("product.newstock")}
                   />
-
                   <button
                     className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    onClick={() => handleUpdateStock(product.productId, newStock, product.stockQuantity)}
+                    onClick={() => handleUpdateStock(product.productId, newStock)}
                   >
                     {isUpdatingStock ? (
-                      <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 border-solid rounded-full"></div> // Spinner
+                      <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 dark:border-blue-300 border-solid rounded-full"></div>
                     ) : (
-                      "Confirm Update"
+                      t("product.confirm")
                     )}
                   </button>
                 </div>

@@ -10,8 +10,10 @@ import CardPurchaseSummary from "./CardPurchaseSummary";
 import CardSalesSummary from "./CardSalesSummary";
 import StatCard from "./StatCard";
 import Navbar from "@/app/(components)/Navbar"; 
+import { useTranslation } from 'react-i18next';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication
   // const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const router = useRouter(); 
@@ -19,6 +21,7 @@ const Dashboard = () => {
   // Fetch all sales and expenses initially (always fetch, no conditional logic here)
   const { data: expenses = [], isLoading: loadingExpenses, isError: errorExpenses } = useGetExpensesQuery();
   const { data: sales = [], isLoading: loadingSales, isError: errorSales } = useGetSalesQuery();
+  
 
   
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -34,11 +37,11 @@ const Dashboard = () => {
 
   
   if (loadingExpenses || loadingSales) {
-    return <div>Loading...</div>;
+    return <div> {t("dashboard.loading")}</div>;
   }
 
   if (errorExpenses || errorSales) {
-    return <div className="text-red-500">Failed to fetch data</div>;
+    return <div className="text-red-500">{t("dashboard.fetchError")}</div>;
   }
 
   // Calculate date range directly based on fetched data 
@@ -94,7 +97,7 @@ const Dashboard = () => {
   
   
   if (!isAuthenticated) {
-    return <p>Loading...</p>; 
+    return <p> {t("dashboard.loading")}</p>; 
   }
 
   return (
@@ -109,24 +112,28 @@ const Dashboard = () => {
         <CardExpenseSummary />
         
         <StatCard
-          title="Expenses"
+          title={t("dashboard.expenses")}
           primaryIcon={<Package className="text-blue-600 w-6 h-6" />}
           dateRange={`${calculatedStartDate} - ${calculatedEndDate}`} 
           details={[{
-            title: "Total Expenses",
+            title: t("dashboard.totalExpenses"),
             amount: `${formattedTotalExpenses} XAF`,
+          },
+           {
+            title: ".",
+            amount: ".",
           }]}
         />
       
         <StatCard
-          title="Sales & Discount"
+          title={t("dashboard.salesAndDiscountTitle")}
           primaryIcon={<Tag className="text-blue-600 w-6 h-6" />}
           dateRange={`${calculatedStartDate} - ${calculatedEndDate}`}
           details={[{
-            title: "Total Sales",
+            title:  t("dashboard.totalSales"),
             amount: `${formattedTotalSales} XAF`,
           }, {
-            title: "Total Discount Made",
+            title: t("dashboard.totalDiscounts"),
             amount: `${formattedTotalDiscounts}`,
           }]}
         />

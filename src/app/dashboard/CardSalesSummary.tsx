@@ -1,6 +1,9 @@
 import { useGetSalesQuery } from "@/state/api";
 import { TrendingUp, TrendingDown, X } from "lucide-react";
-import React, { useState} from "react";
+import React, { useState } from "react";
+import { useTranslation } from 'react-i18next';
+import { TooltipProps } from "recharts";
+
 import {
   Bar,
   BarChart,
@@ -18,7 +21,8 @@ import {
 } from "../(components)/ui/Dialog";
 
 const CardSalesSummary = () => {
-  const { data: salesData,isError } = useGetSalesQuery();
+  const { t } = useTranslation();
+  const { data: salesData, isError } = useGetSalesQuery();
 
   // Get current year and month
   const currentYear = new Date().getFullYear().toString();
@@ -58,37 +62,36 @@ const CardSalesSummary = () => {
 
   // Ensuring salesData is an array
   const sales = Array.isArray(salesData) ? salesData : [];
-// Calculate number of weeks in the selected month and year
-const getWeeksInMonth = (year: string, month: string) => {
-  const date = new Date(`${year}-${months.indexOf(month) + 1}-01`);
-  const daysInMonth = new Date(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    0
-  ).getDate();
+  // Calculate number of weeks in the selected month and year
+  const getWeeksInMonth = (year: string, month: string) => {
+    const date = new Date(`${year}-${months.indexOf(month) + 1}-01`);
+    const daysInMonth = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      0
+    ).getDate();
 
-  // Group days into weeks
-  const weeks = [];
-  let currentWeek = [];
-  for (let day = 1; day <= daysInMonth; day++) {
+    // Group days into weeks
+    const weeks = [];
+    let currentWeek = [];
+    for (let day = 1; day <= daysInMonth; day++) {
       currentWeek.push(day);
-      
+
       // If the current week reaches 7 days or it's the last day of the month, push the current week to weeks
       if (currentWeek.length === 7 || day === daysInMonth) {
-          weeks.push(currentWeek);
-          currentWeek = [];
+        weeks.push(currentWeek);
+        currentWeek = [];
       }
-  }
+    }
 
-  // Ensure February is treated as having 5 weeks if the first day is not a Monday and there are leftover days
-  if (month === "February" && weeks.length < 5) {
+    // Ensure February is treated as having 5 weeks if the first day is not a Monday and there are leftover days
+    if (month === "February" && weeks.length < 5) {
       // Add a 5th week if February only had 4 weeks
       weeks.push([daysInMonth]); // Add the final days of February as a separate week
-  }
+    }
 
-  return weeks;
-};
-
+    return weeks;
+  };
 
   const calculateTotalYearSales = (year: string) => {
     // Filter sales data by year
@@ -107,7 +110,10 @@ const getWeeksInMonth = (year: string, month: string) => {
     });
 
     // Sum up total sales for the entire year
-    return totalSalesByMonth.reduce((total, monthlyTotal) => total + monthlyTotal, 0);
+    return totalSalesByMonth.reduce(
+      (total, monthlyTotal) => total + monthlyTotal,
+      0
+    );
   };
 
   const totalYearSales = calculateTotalYearSales(selectedYear);
@@ -125,28 +131,38 @@ const getWeeksInMonth = (year: string, month: string) => {
   });
 
   // Function to get the date range for the selected week
- const getWeekDateRange = (weekIndex: number) => {
-    const firstDayOfMonth = new Date(Number(selectedYear), months.indexOf(selectedMonth), 1);
-    const lastDayOfMonth = new Date(Number(selectedYear), months.indexOf(selectedMonth) + 1, 0);
+  const getWeekDateRange = (weekIndex: number) => {
+    const firstDayOfMonth = new Date(
+      Number(selectedYear),
+      months.indexOf(selectedMonth),
+      1
+    );
+    const lastDayOfMonth = new Date(
+      Number(selectedYear),
+      months.indexOf(selectedMonth) + 1,
+      0
+    );
 
     let startOfWeek: Date;
     let endOfWeek: Date;
 
     // Get the weekday of the 1st of the month (0 = Sunday, 1 = Monday, etc.)
-    const firstDayOfWeek = firstDayOfMonth.getDay(); 
+    const firstDayOfWeek = firstDayOfMonth.getDay();
 
     // Adjust the first week's start to the Monday of that week
     // If the first day of the month is not a Monday, we adjust to the previous Monday
-    const dayOffset = (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1);  // Adjust to previous Monday (0 = Sunday, 1 = Monday, ...)
+    const dayOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Adjust to previous Monday (0 = Sunday, 1 = Monday, ...)
 
     if (weekIndex === 1) {
-        // The start of the first week should be the first Monday
-        startOfWeek = new Date(firstDayOfMonth);
-        startOfWeek.setDate(firstDayOfMonth.getDate() - dayOffset);
+      // The start of the first week should be the first Monday
+      startOfWeek = new Date(firstDayOfMonth);
+      startOfWeek.setDate(firstDayOfMonth.getDate() - dayOffset);
     } else {
-        // For subsequent weeks, just add (weekIndex - 1) * 7 days to the previous week's start
-        startOfWeek = new Date(firstDayOfMonth);
-        startOfWeek.setDate(firstDayOfMonth.getDate() - dayOffset + (weekIndex - 1) * 7);
+      // For subsequent weeks, just add (weekIndex - 1) * 7 days to the previous week's start
+      startOfWeek = new Date(firstDayOfMonth);
+      startOfWeek.setDate(
+        firstDayOfMonth.getDate() - dayOffset + (weekIndex - 1) * 7
+      );
     }
 
     // End of the week is start + 6 days (Sunday)
@@ -156,39 +172,40 @@ const getWeeksInMonth = (year: string, month: string) => {
     // Ensure we do not go beyond the month's last day
     // If the end date is in the next month, adjust it to the last day of the current month
     if (endOfWeek.getMonth() !== firstDayOfMonth.getMonth()) {
-        // If it's in the next month, move it to the last day of the current month
-        endOfWeek = new Date(lastDayOfMonth);
+      // If it's in the next month, move it to the last day of the current month
+      endOfWeek = new Date(lastDayOfMonth);
     }
 
     // Now, let's check if the start date is in the previous month and adjust if necessary
     if (startOfWeek.getMonth() !== firstDayOfMonth.getMonth()) {
-        // If the start date is in the previous month, adjust it to the first day of the current month
-        startOfWeek = new Date(firstDayOfMonth);
+      // If the start date is in the previous month, adjust it to the first day of the current month
+      startOfWeek = new Date(firstDayOfMonth);
     }
 
     return { startDate: startOfWeek, endDate: endOfWeek };
-};
+  };
 
-// Get start and end dates for the selected week
-const { startDate, endDate } = getWeekDateRange(parseInt(selectedWeek.split(" ")[1]));
+  // Get start and end dates for the selected week
+  const { startDate, endDate } = getWeekDateRange(
+    parseInt(selectedWeek.split(" ")[1])
+  );
 
-// Normalize saleDate for comparison (optional)
-const normalizeDate = (date: Date): Date => {
+  // Normalize saleDate for comparison (optional)
+  const normalizeDate = (date: Date): Date => {
     date.setHours(0, 0, 0, 0); // Set to midnight
     return date;
-};
+  };
 
-// Filter sales data based on selected week
-const salesByWeek = sales.filter((sale) => {
-  const saleDate = new Date(sale.saleDate);
-  return normalizeDate(saleDate) >= normalizeDate(startDate) && normalizeDate(saleDate) <= normalizeDate(endDate);
-});
+  // Filter sales data based on selected week
+  const salesByWeek = sales.filter((sale) => {
+    const saleDate = new Date(sale.saleDate);
+    return (
+      normalizeDate(saleDate) >= normalizeDate(startDate) &&
+      normalizeDate(saleDate) <= normalizeDate(endDate)
+    );
+  });
 
-
-
-
-console.log("Final salesByWeek data:", salesByWeek);
-
+  console.log("Final salesByWeek data:", salesByWeek);
 
   // Initialize sales data by day
   const salesByDay = weekDays.map((day) => ({
@@ -241,7 +258,6 @@ console.log("Final salesByWeek data:", salesByWeek);
     0
   );
 
-  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const findBestSellingProduct = (dayData: any) => {
     const productSales = dayData.productSales;
@@ -259,13 +275,13 @@ console.log("Final salesByWeek data:", salesByWeek);
 
     return { bestProduct, bestProductAmount };
   };
-  
 
   const selectedDayData = salesByDay.find((d) => d.day === selectedDay) || {
     totalAmount: 0,
     bestProduct: "N/A",
     bestProductAmount: 0,
   };
+  
 
   const { bestProduct, bestProductAmount } =
     findBestSellingProduct(selectedDayData);
@@ -281,39 +297,39 @@ console.log("Final salesByWeek data:", salesByWeek);
     salesDifference = selectedDayData.totalAmount - previousDayData.totalAmount;
     salesTrend =
       salesDifference > 0
-        ? "Increase"
+        ? t("saleSummary.sales_increase")
         : salesDifference < 0
-        ? "Decrease"
-        : "No Change";
+        ? t("saleSummary.sales_decrease")
+        : t("saleSummary.no_change");
   }
-  
 
-  if (isError) return <div className="m-5">Failed to fetch data</div>;
+  if (isError) return <div className="m-5">{t("saleSummary.failed_to_fetch_data")}</div>;
 
   return (
     <>
-     <div
-  className="bg-white shadow-md rounded-2xl p-6 h-80 cursor-pointer hover:shadow-2xl hover:scale-105  transition-all"
-  onClick={() => setIsModalOpen(true)}
->
-  <h2 className="text-lg font-semibold text-gray-700">Sales Summary</h2> <br />
-  <p className="text-2xl font-extrabold text-blue-600 hover:text-blue-800 transition-all">
-   <h3 className="font-semibold">Total Sales for the year {selectedYear}</h3> <br />
-   <p className="text-lg">{totalYearSales.toFixed(2)} XAF</p>
-  </p>
-  <p className="text-lg text-gray-500 mt-3">
-    🧹 Clean up your inventory and get access to your detailed sales summary for the year, month and day. 📊
-  </p>
-</div>
-
-
-
+      <div
+        className="bg-white shadow-md rounded-2xl p-6 h-80 cursor-pointer hover:shadow-2xl hover:scale-105  transition-all"
+        onClick={() => setIsModalOpen(true)}
+      >
+        <h2 className="text-lg font-semibold text-gray-700">{t("saleSummary.sales_summary")}</h2>{" "}
+        <br />
+        <p className="text-2xl font-extrabold text-blue-600 hover:text-blue-800 transition-all">
+          <h3 className="font-semibold">
+          {t("saleSummary.total_sales_for")} {selectedYear}
+          </h3>{" "}
+          <br />
+          <p className="text-lg">{totalYearSales.toFixed(2)} XAF</p>
+        </p>
+        <p className="text-lg text-gray-500 mt-3">
+          🧹 {t("saleSummary.clean_up_inventory")} 📊
+        </p>
+      </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-7xl">
           <DialogHeader>
             <DialogTitle>
-              Detailed Sales Insights for {selectedMonth} {selectedYear}
+            {t("saleSummary.detailed_sales_insights")}  {selectedMonth} {selectedYear}
             </DialogTitle>
             <button
               className="absolute top-2 right-2"
@@ -325,37 +341,41 @@ console.log("Final salesByWeek data:", salesByWeek);
 
           <div className="flex gap-4 mb-4">
             <div className="mb-4">
-            <label className="text-gray-500 text-sm mr-2">Select Year:</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              aria-label="Select Year"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+              <label className="text-gray-500 text-sm mr-2"> {t("saleSummary.select_year")}:</label>
+              <select
+                className="shadow-sm border border-gray-300 bg-white p-2 rounded"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                aria-label={t("saleSummary.select_year")}
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
-          
+
             <div className="mb-4">
-            <label className="text-gray-500 text-sm mr-2">Select Month:</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              aria-label="Select Month"
-            >
-              {months.map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
-            </select>
+              <label className="text-gray-500 text-sm mr-2">
+              {t("saleSummary.select_month")}:
+              </label>
+              <select
+                className="shadow-sm border border-gray-300 bg-white p-2 rounded"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label={t("saleSummary.select_month")}
+              >
+                {months.map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
             </div>
-            
+
             <div className="mb-4">
-              <label className="text-gray-500 text-sm mr-2">Select Week:</label>
+              <label className="text-gray-500 text-sm mr-2">{t("saleSummary.select_week")}:</label>
               <select
                 className="shadow-sm border border-gray-300 bg-white p-2 rounded"
                 value={selectedWeek}
@@ -369,7 +389,7 @@ console.log("Final salesByWeek data:", salesByWeek);
               </select>
             </div>
             <div className="mb-4">
-              <label className="text-gray-500 text-sm mr-2">Select Day:</label>
+              <label className="text-gray-500 text-sm mr-2">{t("saleSummary.select_day")}:</label>
               <select
                 className="shadow-sm border border-gray-300 bg-white p-2 rounded"
                 value={selectedDay}
@@ -386,17 +406,17 @@ console.log("Final salesByWeek data:", salesByWeek);
 
           <div className="flex gap-5">
             <div className="p-4 bg-gray-100 rounded-lg mb-4">
-              <h3 className="font-semibold">Total Sales for {selectedYear}</h3>
+              <h3 className="font-semibold">{t("saleSummary.total_for")} {selectedYear}</h3>
               <p className="text-lg">{totalYearSales.toFixed(2)} XAF</p>
             </div>
 
             <div className="p-4 bg-gray-100 rounded-lg mb-4">
-              <h3 className="font-semibold">Total Sales for {selectedMonth}</h3>
+              <h3 className="font-semibold">{t("saleSummary.total_for")} {selectedMonth}</h3>
               <p className="text-lg">{totalMonthSales.toFixed(2)} XAF</p>
             </div>
 
             <div className="p-4 bg-gray-100 rounded-lg mb-4">
-              <h3 className="font-semibold">Total Sales for {selectedWeek}</h3>
+              <h3 className="font-semibold">{t("saleSummary.total_for")} {selectedWeek}</h3>
               <p className="text-lg">{totalWeekSales.toFixed(2)} XAF</p>
             </div>
           </div>
@@ -404,12 +424,17 @@ console.log("Final salesByWeek data:", salesByWeek);
           <ResponsiveContainer width="100%" height={210}>
             <BarChart data={salesByDay}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 8 }} // Reduce font size
+                angle={-30} // Rotate the labels to -45 degrees for better fit
+                textAnchor="end" // Ensure the labels are aligned properly after rotation
+              />
               <YAxis
                 tickFormatter={(value) => `${(value / 1000).toFixed(1)}k XAF`}
               />
               <Tooltip
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: number, name: string, props: any) => {
                   const activePayload = props.payload[0]; // Get the first item from payload
                   const dayData = salesByDay.find(
@@ -421,10 +446,18 @@ console.log("Final salesByWeek data:", salesByWeek);
                     dayData ? dayData.date : "", // Full date if available
                   ];
                 }}
-                labelFormatter={(label: string) => {
+                labelFormatter={(label: string, payload: TooltipProps<number, string>["payload"]) => {
+                  if (!payload || payload.length === 0) return label; // Handle empty payload case
+                
                   const dayData = salesByDay.find((day) => day.day === label);
-                  return dayData ? dayData.date : label; // Show the full date as label
+                
+                  return (
+                    <span style={{ fontWeight: "bold", color: "blue" }}>
+                      {dayData ? dayData.date : label}
+                    </span>
+                  );
                 }}
+                
               />
               <Bar
                 dataKey="totalAmount"
@@ -437,7 +470,7 @@ console.log("Final salesByWeek data:", salesByWeek);
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
             <div className="p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Sales Change</h3>
+              <h3 className="font-semibold">{t("saleSummary.sales_change")}</h3>
               <p
                 className={`text-lg ${
                   salesDifference >= 0 ? "text-green-600" : "text-red-600"
@@ -454,25 +487,25 @@ console.log("Final salesByWeek data:", salesByWeek);
             </div>
 
             <div className="p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Total Amount Sold</h3>
+              <h3 className="font-semibold">{t("saleSummary.total_amount_sold")}</h3>
               <p className="text-lg">
                 {selectedDayData.totalAmount.toFixed(2) || "0.00"} XAF
               </p>
             </div>
 
             <div className="p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Best-Selling Product</h3>
+              <h3 className="font-semibold">{t("saleSummary.best_selling_product")}</h3>
               <p className="text-lg">{bestProduct}</p>
               <p className="text-sm text-gray-500">
-                Sales: {bestProductAmount.toFixed(2)} XAF
+              {t("saleSummary.total_sales")}: {bestProductAmount.toFixed(2)} XAF
               </p>
             </div>
 
             <div className="p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Most Productive Day</h3>
+              <h3 className="font-semibold">{t("saleSummary.most_productive_day")}</h3>
               <p className="text-lg">{mostProductiveDay.day}</p>
               <p className="text-sm text-gray-500">
-                Sales: {mostProductiveDay.totalAmount.toFixed(2)} XAF
+              {t("saleSummary.total_sales")}: {mostProductiveDay.totalAmount.toFixed(2)} XAF
               </p>
             </div>
           </div>

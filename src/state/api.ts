@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {jwtDecode} from 'jwt-decode';
 
 
 export interface Sale {
@@ -102,95 +103,171 @@ export interface User {
   email: string;
 }
 
+// Define a type for the decoded JWT token payload.
+interface DecodedToken {
+  userId: string;
+  exp?: number;
+}
+
+
+const getUserIdFromAuth = () => {
+  const token = localStorage.getItem('authToken');
+  
+  if (token) {
+    try {
+      const decodedToken = jwtDecode<DecodedToken>(token); // Decode the JWT token using the library
+
+      // Check if the token has an 'exp' field and if it's expired
+      const currentTime = Date.now() / 1000; // Current time in seconds
+      if (decodedToken.exp && decodedToken.exp < currentTime) {
+        console.error('Token expired');
+        return null; // Token is expired
+      }
+
+      return decodedToken.userId || null; // Return userId from decoded token, or null if it's not present
+    } catch (e) {
+      console.error('Error decoding token:', e);
+      return null;
+    }
+  }
+
+  return null; // Return null if token is not found
+};
+
 export const api = createApi({
-  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    prepareHeaders: (headers) => {
+      
+      const token = localStorage.getItem('authToken');
+      
+      
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      
+     
+      return headers;
+    },
+    credentials: "include", // Ensure cookies (if applicable)
+    fetchFn: async (...args) => {
+      const response = await fetch(...args);
+      if (response.status === 401) {
+        localStorage.removeItem("authToken");
+        window.location.href = "/login";
+      }
+      return response;
+    },
+  }),
   reducerPath: "api",
-  tagTypes: ["DashboardMetrics", "Products", "Users", "Expenses","Sales","Expense"],
+  tagTypes: [
+    "DashboardMetrics", 
+    "Products", 
+    "Users", 
+    "Expenses", 
+    "Sales", 
+    "Expense"
+  ],
   endpoints: (build) => ({
+    // Dashboard endpoints
     getDashboardMetrics: build.query<DashboardMetrics, void>({
-      query: () => "/dashboard",
+      query: () => {
+        return { url: `/dashboard` };
+      },
       providesTags: ["DashboardMetrics"],
     }),
+
+    // Product endpoints
     getProducts: build.query<Product[], string | void>({
-      query: (search) => ({
-        url: "/products",
-        params: search ? { search } : {},
-      }),
+      query: (search= '') => {
+        const userId = getUserIdFromAuth();
+        return {
+          url: "/products",
+          params: { userId, search },  // Pass searchTerm as a query parameter
+        };
+      },
       providesTags: ["Products"],
     }),
+    
     createProduct: build.mutation<Product, NewProduct>({
-      query: (newProduct) => ({
-        url: "/products",
-        method: "POST",
-        body: newProduct,
-      }),
+      query: (newProduct) => {
+        const userId = getUserIdFromAuth();
+        return { url: "/products", method: "POST", body: { ...newProduct, userId } };
+      },
       invalidatesTags: ["Products"],
     }),
-    // Mutation to update an existing product
-updateProduct: build.mutation<Product, Partial<Product>>({
-  query: (product) => ({
-    url: `/products/${product.productId}`, // Ensure productId is included in the URL
-    method: "PUT",
-    body: product, // Sends all fields that may need updating
-  }),
-  invalidatesTags: ["Products"],
-}),
-   // Mutation to update only stock quantity of a product
-updateProductStock: build.mutation<Product, { productId: string, stockQuantity: number }>({
-  query: ({ productId, stockQuantity }) => ({
-    url: `/products/${productId}/stock`, // Assuming you have a specific endpoint for updating stock
-    method: "PUT",
-    body: { stockQuantity }, // Send only the stockQuantity in the body
-  }),
-  invalidatesTags: ["Products"],
-}),
-      
-       // Mutation to delete a product by productId
+    updateProduct: build.mutation<Product, Partial<Product>>({
+      query: (product) => {
+        const userId = getUserIdFromAuth();
+        return { url: `/products/${product.productId}`, method: "PUT", body: { ...product, userId } };
+      },
+      invalidatesTags: ["Products"],
+    }),
+    updateProductStock: build.mutation<Product, { productId: string, stockQuantity: number }>({
+      query: ({ productId, stockQuantity }) => {
+        const userId = getUserIdFromAuth();
+        return { url: `/products/${productId}/stock`, method: "PUT", body: { stockQuantity, userId } };
+      },
+      invalidatesTags: ["Products"],
+    }),
     deleteProduct: build.mutation<{ success: boolean; productId: string }, string>({
-      query: (productId) => ({
-        url: `/products/${productId}`,
-        method: "DELETE",
-      }),
+      query: (productId) => {
+        const userId = getUserIdFromAuth();
+        return { url: `/products/${productId}`, method: "DELETE", body: { userId } };
+      },
       invalidatesTags: ["Products"],
-    }),
-      // Get all sales
-      getSales: build.query<Sale[], void>({
-        query: () => "/sales",
-        providesTags: ["Sales"], // Tag for cache invalidation
     }),
 
-    // Create a new sale
-    createSale: build.mutation<Sale, NewSale>({
-        query: (newSale) => ({
-            url: "/sales",
-            method: "POST",
-            body: newSale,
-        }),
-        invalidatesTags: ["Sales"], // Invalidate sales data after creation
+    // Sales endpoints
+    getSales: build.query<Sale[], void>({
+      query: () => {
+        const userId = getUserIdFromAuth();
+        return { url: "/sales", params: { userId } };
+      },
+      providesTags: ["Sales"],
     }),
+    createSale: build.mutation<Sale, NewSale>({
+      query: (newSale) => {
+        const userId = getUserIdFromAuth();
+        return { url: "/sales", method: "POST", body: { ...newSale, userId } };
+      },
+      invalidatesTags: ["Sales"],
+    }),
+
+    // Expense endpoints
     getExpenses: build.query<Expense[], void>({
-      query: () => "/expense",
+      query: () => {
+        const userId = getUserIdFromAuth();
+        return { url: "/expense", params: { userId } };
+      },
       providesTags: ["Expense"],
     }),
     createExpense: build.mutation<Expense, NewExpense>({
-      query: (newExpense) => ({
-        url: "/expense",
-        method: "POST",
-        body: newExpense,
-      }),
+      query: (newExpense) => {
+        const userId = getUserIdFromAuth();
+        return { url: "/expense", method: "POST", body: { ...newExpense, userId } };
+      },
       invalidatesTags: ["Expense"],
     }),
-    getUsers: build.query<User[], void>({
-      query: () => "/users",
-      providesTags: ["Users"],
-    }),
     getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
-      query: () => "/expenses",
+      query: () => {
+        const userId = getUserIdFromAuth();
+        return { url: "/expenses", params: { userId } };
+      },
       providesTags: ["Expenses"],
     }),
-    
+
+    // User endpoints
+    getUsers: build.query<User[], void>({
+      query: () => {
+        const userId = getUserIdFromAuth();
+        return { url: "/users", params: { userId } };
+      },
+      providesTags: ["Users"],
+    }),
   }),
 });
+
 
 export const {
   useGetDashboardMetricsQuery,

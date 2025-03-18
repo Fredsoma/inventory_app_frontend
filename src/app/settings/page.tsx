@@ -6,104 +6,88 @@ import { useDispatch, useSelector } from "react-redux";
 import { setIsDarkMode } from "@/state";
 import { GlobalRootState } from "../store";
 import Navbar from "@/app/(components)/Navbar";
-import { useGetUsersQuery } from "@/state/api"; 
+import { useGetUsersQuery } from "@/state/api";
 import { jwtDecode } from "jwt-decode";
-
+import { useTranslation } from "react-i18next";
 
 type UserSetting = {
+  id: string; // Added identifier
   label: string;
   value: string | boolean;
   type: "text" | "toggle";
 };
 
 const Settings = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const router = useRouter();
   const isDarkMode = useSelector((state: GlobalRootState) => state.global.isDarkMode);
   const [userSettings, setUserSettings] = useState<UserSetting[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string>("");
+  const { data: users, isLoading } = useGetUsersQuery();
 
-  const { data: users, isLoading } = useGetUsersQuery(); // Fetch users data
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [username, setUsername] = useState<string>("");
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [email, setEmail] = useState<string>("");
-  
+  // Removed unused username and email states
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-
     if (!token) {
       router.push("/login");
     } else {
       setIsAuthenticated(true);
-
-      // Decode the token and get userId
       const decodedToken = jwtDecode<{ userId: string }>(token);
-      setUserId(decodedToken.userId); // Store userId for later use
+      setUserId(decodedToken.userId);
     }
   }, [router]);
 
   useEffect(() => {
     if (users && users.length > 0 && userId) {
-      // Use the dynamic userId to find the correct user
       const user = users.find((user) => user.userId === userId);
       if (user) {
-        setUsername(user.username);
-        setEmail(user.email); 
         setUserSettings([
-          { label: "Username", value: user.username, type: "text" },
-          { label: "Email", value: user.email, type: "text" },
-          { label: "Dark Mode", value: isDarkMode, type: "toggle" },
+          { id: "username", label: t("settings.username"), value: user.username, type: "text" },
+          { id: "email", label: "Email", value: user.email, type: "text" },
+          { id: "darkmode", label: t("settings.darmode"), value: isDarkMode, type: "toggle" },
         ]);
       }
     }
-  }, [users, userId, isDarkMode]);
+  }, [users, userId, isDarkMode, t]);
 
   if (!isAuthenticated || isLoading) {
-    return <div>Loading...</div>;
+    return <div>{t("settings.loading")}</div>;
   }
 
-  // Handle toggle change for dark mode
   const handleToggleChange = (index: number) => {
-    const isToggleSetting = userSettings[index].label === "Dark Mode";
-  
-    // Only toggle the dark mode if the current setting is for dark mode
-    if (isToggleSetting) {
-      const newDarkModeValue = !isDarkMode; // Get the opposite of the current state
-      dispatch(setIsDarkMode(newDarkModeValue)); // Directly dispatch the new value to Redux
+    const isDarkModeSetting = userSettings[index].id === "darkmode";
+    if (isDarkModeSetting) {
+      const newDarkModeValue = !isDarkMode;
+      dispatch(setIsDarkMode(newDarkModeValue));
     }
-  
-    // Update the local state to reflect the change immediately
-    setUserSettings((prevSettings) => 
-      prevSettings.map((setting, i) => 
-        i === index 
-          ? { ...setting, value: !setting.value } // Toggle the value at the specific index
-          : setting
+    setUserSettings((prevSettings) =>
+      prevSettings.map((setting, i) =>
+        i === index ? { ...setting, value: !setting.value } : setting
       )
     );
   };
-  
 
   return (
     <div className="w-full">
-    
       <Navbar />
-
       <div className="overflow-x-auto mt-5 shadow-md">
         <table className="min-w-full bg-white rounded-lg">
           <thead className="bg-gray-800 text-white">
             <tr>
-              <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Setting</th>
-              <th className="text-left py-3 px-4 uppercase font-semibold text-sm">Value</th>
+              <th className="text-left py-3 px-4 uppercase font-semibold text-sm">
+                {t("settings.seting")}
+              </th>
+              <th className="text-left py-3 px-4 uppercase font-semibold text-sm">
+                {t("settings.val")}
+              </th>
             </tr>
           </thead>
           <tbody>
             {userSettings.map((setting, index) => (
-              <tr className="hover:bg-blue-50" key={setting.label}>
+              <tr className="hover:bg-blue-50" key={setting.id}>
                 <td className="py-2 px-4">{setting.label}</td>
                 <td className="py-2 px-4">
                   {setting.type === "toggle" ? (
@@ -111,7 +95,7 @@ const Settings = () => {
                       <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={setting.label === "Dark Mode" ? isDarkMode : setting.value as boolean}
+                        checked={setting.id === "darkmode" ? isDarkMode : Boolean(setting.value)}
                         onChange={() => handleToggleChange(index)}
                       />
                       <div

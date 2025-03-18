@@ -3,13 +3,68 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
-import { Menu, Moon, Sun, Settings, LogOut, User } from "lucide-react"; 
+import { Menu, Moon, Sun, Settings, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useGetUsersQuery } from "@/state/api"; 
+import { useGetUsersQuery } from "@/state/api";
 import toast, { Toaster } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import Image from "next/image";
+import france from "../../../assets/france.png";
+import anglais from "../../../assets/english.jpeg";
+
+
+// LanguageSwitcher Component
+const LanguageSwitcher = () => {
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") || "en"; // Default to English
+    i18n.changeLanguage(savedLanguage);
+  }, [i18n]); // Ensure `i18n` is in dependencies
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("language", lang);
+  };
+
+  return (
+    <div className="flex items-center gap-4">
+      <button
+        onClick={() => changeLanguage("en")}
+        className={`relative p-1 w-10 h-10 rounded-full transition duration-300 transform hover:scale-110 ${
+          i18n.language === "en" ? "ring-2 ring-blue-500" : "opacity-80"
+        }`}
+      >
+        <Image
+          src={anglais}
+          alt="English"
+          width={40}
+          height={40}
+          className="rounded-full"
+        />
+      </button>
+      <button
+        onClick={() => changeLanguage("fr")}
+        className={`relative p-1 w-10 h-10 rounded-full transition duration-300 transform hover:scale-110 ${
+          i18n.language === "fr" ? "ring-2 ring-blue-500" : "opacity-80"
+        }`}
+      >
+        <Image
+          src={france}
+          alt="Français"
+          width={40}
+          height={40}
+          className="rounded-full"
+        />
+      </button>
+    </div>
+  );
+};
+
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed
@@ -20,7 +75,7 @@ const Navbar = () => {
   const [username, setUsername] = useState<string>(""); // State to hold the username
   const router = useRouter();
 
-  const { data: users} = useGetUsersQuery(); // Fetch user data using the API hook
+  const { data: users } = useGetUsersQuery(); // Fetch user data using the API hook
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -57,7 +112,7 @@ const Navbar = () => {
     }
   }, [isAuthenticated, users]);
 
-  if (isAuthenticated === null) return null; 
+  if (isAuthenticated === null) return null;
 
   if (!isAuthenticated) return null;
 
@@ -65,18 +120,20 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     setIsAuthenticated(false);
-    toast.success("Logged out successfully!", { duration: 2000 });
-    router.replace("/login");  
+    toast.success(t("navbar.logout_success"), { duration: 2000 });
+    router.replace("/login");
   };
 
   return (
     <div className="flex justify-between items-center w-full mb-7">
-      <Toaster position="top-center" toastOptions={{ duration: 2000 }} /> 
+      <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
+
       {/* LEFT SIDE */}
       <div className="flex justify-between items-center gap-5">
         <button
           className="px-3 py-3 bg-gray-100 rounded-full hover:bg-blue-100"
           onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
+          title={t("navbar.toggle_sidebar")}
         >
           <Menu className="w-4 h-4" />
         </button>
@@ -90,7 +147,7 @@ const Navbar = () => {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <LogOut className="text-gray-500" size={20} />
             </div>
-            <span className="pl-10 text-gray-500">Logout</span>
+            <span className="pl-10 text-gray-500">{t("navbar.logout")}</span>
           </button>
         </div>
       </div>
@@ -98,7 +155,7 @@ const Navbar = () => {
       {/* RIGHT SIDE */}
       <div className="flex justify-between items-center gap-5">
         <div className="hidden md:flex justify-between items-center gap-5">
-          <button onClick={() => dispatch(setIsDarkMode(!isDarkMode))}>
+          <button onClick={() => dispatch(setIsDarkMode(!isDarkMode))} title={t("navbar.toggle_dark_mode")}>
             {isDarkMode ? (
               <Sun className="cursor-pointer text-gray-500" size={24} />
             ) : (
@@ -108,15 +165,16 @@ const Navbar = () => {
 
           <hr className="w-0 h-7 border border-solid border-l border-gray-300 mx-3" />
           <div className="flex items-center gap-3 cursor-pointer">
-            {/* Replace Image with User profile icon */}
             <User className="text-gray-500" size={25} />
-            {/* Displaying the fetched username */}
-            <span className="font-semibold">{username || "Loading..."}</span>
+            <span className="font-semibold">{username || t("navbar.loading")}</span>
           </div>
         </div>
 
+        {/* Language Switcher */}
+        <LanguageSwitcher />
+
         <Link href="/settings">
-          <Settings className="cursor-pointer text-gray-500" size={24} />
+          <Settings className="cursor-pointer text-gray-500" size={24} aria-label={t("navbar.settings")} />
         </Link>
       </div>
     </div>

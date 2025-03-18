@@ -20,6 +20,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image"; 
 import mystock from "../../../assets/mystock.png";
+import { useTranslation } from "react-i18next";
+
 
 interface SidebarLinkProps {
   href: string;
@@ -59,6 +61,7 @@ const SidebarLink = ({
 };
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
 
@@ -108,68 +111,68 @@ const Sidebar = () => {
         <SidebarLink
           href="/dashboard"
           icon={Layout}
-          label="Dashboard"
+          label={t("sidebar.dashboard")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/inventory"
           icon={Archive}
-          label="Inventory"
+          label={t("sidebar.inventory")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/products"
           icon={Clipboard}
-          label="Products"
+          label={t("sidebar.products")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/sales"
           icon={ShoppingCart}
-          label="Sales"
+          label={t("sidebar.sales")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/salelist"
           icon={DollarSign}
-          label="Salelist"
+          label={t("sidebar.salelist")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/expense"
           icon={CreditCard}
-          label="Expense"
+          label={t("sidebar.expense")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/expenselist"
           icon={Coins}
-          label="Expenselist"
+          label={t("sidebar.expenselist")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/users"
           icon={User}
-          label="Users"
+          label={t("sidebar.users")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/settings"
           icon={SlidersHorizontal}
-          label="Settings"
+          label={t("sidebar.settings")}
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href="/expenses"
           icon={CircleDollarSign}
-          label="Expenses"
+          label={t("sidebar.expenses")}
           isCollapsed={isSidebarCollapsed}
         />
       </div>
 
       {/* FOOTER */}
       <div className={`${isSidebarCollapsed ? "hidden" : "block"} mb-10`}>
-        <p className="text-center text-xs text-gray-500">&copy; 2025 MyStock</p>
+      <p className="text-center text-[8px] text-gray-500">{t("sidebar.copyright")}</p>
       </div>
     </div>
   );

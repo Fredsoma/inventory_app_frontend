@@ -1,6 +1,7 @@
 
 import React from "react";
 
+
 type StatDetail = {
   title: string;
   amount: string;

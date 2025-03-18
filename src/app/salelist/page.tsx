@@ -6,39 +6,58 @@ import { useGetSalesQuery } from "@/state/api";
 import Header from "../(components)/Header";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Sale } from "@/state/api";
-
-
+import { useTranslation } from 'react-i18next';
 import Navbar from "@/app/(components)/Navbar"; 
 
-const columns: GridColDef<Sale>[] = [
-  { field: "saleId", headerName: "Sale ID", width: 150 },
-  { field: "paymentType", headerName: "Payment Type", width: 150 },
-  { field: "saleDate", headerName: "Sale Date", width: 150 },
-  { field: "saleTime", headerName: "Sale Time", width: 150 },
-  { field: "productName", headerName: "Product Name", width: 200 },
-  { field: "quantity", headerName: "Quantity", width: 150 },
-  { 
-    field: "unitPrice", 
-    headerName: "Unit Price", 
-    width: 150,
-    renderCell: (params) => `${params.value} XAF` 
-  },
-  { field: "discount", headerName: "Discount", width: 150 },
-  { 
-    field: "totalAmount", 
-    headerName: "Total Amount", 
-    width: 150,
-    renderCell: (params) => `${params.value} XAF`
-  },
-];
+// Remove the top-level useTranslation hook call
 
 const Sales = () => {
+  // Call the hook inside the component
+  const { t } = useTranslation();
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const { data: sales, isError, isLoading } = useGetSalesQuery();
 
+  // Define columns inside the component so that `t` is available
+  const columns: GridColDef<Sale>[] = [
+    { field: "saleId", headerName: t("salelist.saleid"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { field: "paymentType", headerName: t("salelist.paymenttype"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { field: "saleDate", headerName: t("salelist.saledate"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { field: "saleTime", headerName: t("salelist.saletime"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { field: "productName", headerName: t("salelist.productn"), width: 200,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { field: "quantity", headerName: t("salelist.qty"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+     },
+    { 
+      field: "unitPrice", 
+      headerName: t("salelist.unitprice"), 
+      width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+      renderCell: (params) => `${params.value} XAF` 
+    },
+    { field: "discount", headerName: t("salelist.discount"), width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+      },
+    { 
+      field: "totalAmount", 
+      headerName: t("salelist.totalamount"), 
+      width: 150,
+      headerClassName: "text-blue-700 dark:text-blue-300", // Blue color for header
+      renderCell: (params) => `${params.value} XAF`
+    },
+  ];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -49,18 +68,17 @@ const Sales = () => {
   }, [router]);
 
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
+    return <div>{t("salelist.loading")}</div>;
   }
 
   if (isLoading) {
-    return <div className="py-4">Loading sales...</div>;
+    return <div className="py-4">{t("salelist.loadsales")}</div>;
   }
 
   if (isError || !sales) {
-    return <div className="text-center text-red-500 py-4">Failed to fetch sales</div>;
+    return <div className="text-center text-red-500 py-4">{t("salelist.failfetch")}</div>;
   }
 
-  // Keep numerical values for proper sorting/filtering in DataGrid
   const formattedSales = sales.map((sale: Sale) => ({
     ...sale,
     unitPrice: sale.unitPrice ?? 0,  
@@ -70,10 +88,8 @@ const Sales = () => {
 
   return (
     <div className="flex flex-col">
-      
       <Navbar />
-      
-      <Header name="Sales" />
+      <Header name={t("salelist.saleheader")} />
       <DataGrid
         rows={formattedSales}
         columns={columns}

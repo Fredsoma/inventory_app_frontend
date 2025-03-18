@@ -1,82 +1,66 @@
-"use client"; 
+"use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; 
-import { FaBox } from "react-icons/fa"; 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { FaBox } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+import { ImSpinner2 } from "react-icons/im";
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isRegistrationOpen, setIsRegistrationOpen] = useState(true); 
-  const router = useRouter(); 
-  useEffect(() => {
-    // Check how many users are already registered on page load
-    const checkUserCount = async () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      try {
-        // Use the correct endpoint here
-        const response = await fetch("https://inventory-management-app-v2.onrender.com/users"); 
-        if (!response.ok) {
-          throw new Error("Failed to fetch users.");
-        }
-        const users = await response.json();
+  const [loading, setLoading] = useState(false); // Loading state
+  const router = useRouter();
 
-        // If 2 or more users are registered, close the registration
-        if (users.length >= 2) {
-          setIsRegistrationOpen(false); // Block registration if more than 2 users
-        }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
-        setError("Failed to fetch users, please try again.");
-      }
-    };
-
-    checkUserCount();
-  }, []);
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true); // Start loading
 
-    
-    if (!isRegistrationOpen) {
-      setError("Registration is closed. Only 2 users are allowed.");
-      return;
-    }
+    try {
+      const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-  
-    const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, email, password }),
-    });
+      const data = await response.json();
 
-    const data = await response.json();
-
-    if (response.ok) {
-      router.push("/login"); 
-    } else {
-      setError(data.error || "Something went wrong.");
+      if (response.ok) {
+        localStorage.setItem("authToken", data.token);
+        router.push("/login");
+      } else {
+        setError(data.error || t("register.errorwrong"));
+      }
+    } catch {
+      setError(t("register.networkerror"));
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <div className="text-center mb-6">
-          <FaBox className="text-4xl text-blue-600 mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-800">Register for Inventory Management</h2>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+      <div className="bg-white p-10 rounded-lg shadow-lg w-96">
+        <div className="text-center mb-8">
+          <FaBox className="text-5xl text-blue-600 mx-auto mb-3" />
+          <h2 className="text-2xl font-bold text-gray-800">
+            {t("register.registerinven")} MYSTOCK
+          </h2>
         </div>
-        <form onSubmit={handleRegister} className="space-y-4">
+
+        <form onSubmit={handleRegister} className="space-y-5">
           <input
             type="text"
-            placeholder="Username"
+            placeholder={t("register.registerusername")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg"
+            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
           />
           <input
             type="email"
@@ -84,30 +68,40 @@ const RegisterPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg"
+            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t("register.pwd")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg"
+            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
           />
+
           {error && <p className="text-red-500 text-center">{error}</p>}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg mt-4 hover:bg-blue-700"
-            disabled={!isRegistrationOpen} 
+            className="w-full bg-blue-600 text-white py-3 rounded-lg mt-5 flex items-center justify-center hover:bg-blue-700 transition duration-300 disabled:bg-gray-400"
+            disabled={loading}
           >
-            Register
+            {loading ? (
+              <ImSpinner2 className="animate-spin text-white text-xl" />
+            ) : (
+              t("register.registeringsta")
+            )}
           </button>
         </form>
-        <div className="text-center mt-4">
+
+        <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <a href="/login" className="text-blue-600 hover:text-blue-700">
-              Login here
+            {t("register.accountalready")}{" "}
+            <a
+              href="/login"
+              className="text-blue-600 hover:text-blue-700 font-semibold"
+            >
+              {t("register.login")}
             </a>
           </p>
         </div>
