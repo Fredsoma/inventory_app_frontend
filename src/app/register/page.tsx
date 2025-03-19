@@ -6,21 +6,25 @@ import { FaBox } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { ImSpinner2 } from "react-icons/im";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://inventory-management-app-v2.onrender.com";
+
 const RegisterPage = () => {
   const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true); // Start loading
+    setLoading(true);
+    setError(""); // Clear previous errors
 
     try {
-      const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -29,17 +33,19 @@ const RegisterPage = () => {
       });
 
       const data = await response.json();
+      console.log("Register Response:", data); // Debugging API response
 
       if (response.ok) {
         localStorage.setItem("authToken", data.token);
-        router.push("/login");
+        router.replace("/login"); // Navigate to login page
       } else {
         setError(data.error || t("register.errorwrong"));
       }
-    } catch {
+    } catch (err) {
+      console.error("Registration Error:", err);
       setError(t("register.networkerror"));
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
@@ -60,7 +66,7 @@ const RegisterPage = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="email"
@@ -68,7 +74,7 @@ const RegisterPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="password"
@@ -76,7 +82,7 @@ const RegisterPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
 
           {error && <p className="text-red-500 text-center">{error}</p>}

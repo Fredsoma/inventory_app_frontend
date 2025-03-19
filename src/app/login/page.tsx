@@ -4,22 +4,25 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaBox } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { ImSpinner2 } from "react-icons/im";
 import Image from "next/image";
 import france from "../../assets/france.png";
 import anglais from "../../assets/english.jpeg";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://inventory-management-app-v2.onrender.com";
 
 // LanguageSwitcher Component
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language") || "en"; // Default to English
+    const savedLanguage = localStorage.getItem("language") || "en";
     if (i18n.language !== savedLanguage) {
       i18n.changeLanguage(savedLanguage);
     }
-  }, [i18n]); // Ensure effect runs if i18n changes
+  }, [i18n]);
 
   const changeLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
@@ -34,13 +37,7 @@ const LanguageSwitcher = () => {
           i18n.language === "en" ? "ring-2 ring-blue-500" : "opacity-80"
         }`}
       >
-        <Image
-          src={anglais}
-          alt="English"
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
+        <Image src={anglais} alt="English" width={40} height={40} className="rounded-full" />
       </button>
       <button
         onClick={() => changeLanguage("fr")}
@@ -48,13 +45,7 @@ const LanguageSwitcher = () => {
           i18n.language === "fr" ? "ring-2 ring-blue-500" : "opacity-80"
         }`}
       >
-        <Image
-          src={france}
-          alt="Français"
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
+        <Image src={france} alt="Français" width={40} height={40} className="rounded-full" />
       </button>
     </div>
   );
@@ -70,35 +61,43 @@ const LoginPage = () => {
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
-    setError(""); // Reset error when user starts typing
+    setError(""); // Reset error
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
-    setError(""); // Reset error when user starts typing
+    setError(""); // Reset error
   };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
-    setIsLoading(false); // Reset loading state after request
+      const data = await response.json();
+      console.log("Login Response:", data); // Debugging
 
-    if (response.ok) {
-      localStorage.setItem("authToken", data.token);
-      toast.success(t("login.login_success"), { duration: 2000 });
-      router.replace("/dashboard");
-    } else {
-      setError(data.error || t("login.invalidcred"));
+      if (response.ok) {
+        localStorage.setItem("authToken", data.token);
+        toast.success(t("login.login_success"), { duration: 2000 });
+        router.replace("/dashboard");
+      } else {
+        setError(data.error || t("login.invalidcred"));
+      }
+    } catch (err) {
+      console.error("Login Error:", err);
+      setError(t("login.networkerror"));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,7 +121,7 @@ const LoginPage = () => {
             value={email}
             onChange={handleEmailChange}
             required
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="password"
@@ -130,13 +129,13 @@ const LoginPage = () => {
             value={password}
             onChange={handlePasswordChange}
             required
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-black text-black dark:text-white"
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           {error && <p className="text-red-500 text-center">{error}</p>}
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg mt-4 flex items-center justify-center hover:bg-blue-700 transition duration-300"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg mt-4 flex items-center justify-center hover:bg-blue-700 transition duration-300 disabled:bg-gray-400"
             disabled={isLoading}
           >
             {isLoading ? <ImSpinner2 className="animate-spin text-white text-xl" /> : t("login.logintext")}
