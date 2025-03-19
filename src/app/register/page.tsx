@@ -20,7 +20,7 @@ const RegisterPage = () => {
     setLoading(true); // Start loading
 
     try {
-      const response = await fetch(  `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, {
+      const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
