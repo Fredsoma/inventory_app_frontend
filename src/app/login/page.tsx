@@ -82,7 +82,7 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const response = await fetch("https://inventory-management-app-v2.onrender.com/auth/login", {
+    const response = await fetch(  `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
