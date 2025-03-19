@@ -121,7 +121,7 @@ const LoginPage = () => {
             value={email}
             onChange={handleEmailChange}
             required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 text-gray-950 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="password"
@@ -129,7 +129,7 @@ const LoginPage = () => {
             value={password}
             onChange={handlePasswordChange}
             required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 text-gray-950 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           {error && <p className="text-red-500 text-center">{error}</p>}
 

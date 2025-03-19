@@ -66,7 +66,7 @@ const RegisterPage = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 text-gray-950 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="email"
@@ -74,7 +74,7 @@ const RegisterPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 text-gray-950  rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="password"
@@ -82,7 +82,7 @@ const RegisterPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 text-gray-950 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
 
           {error && <p className="text-red-500 text-center">{error}</p>}
