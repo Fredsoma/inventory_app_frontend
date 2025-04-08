@@ -40,13 +40,19 @@ const CreateProductModal = ({
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        name === "price" || name === "stockQuantity" || name === "rating"
-          ? parseFloat(value)
-          : value,
-    });
+    // For numeric fields, normalize the value by replacing commas with dots
+    if (name === "price" || name === "stockQuantity" || name === "rating") {
+      const normalizedValue = value.replace(",", ".");
+      setFormData({
+        ...formData,
+        [name]: parseFloat(normalizedValue),
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   // Handle image file change
@@ -77,7 +83,6 @@ const CreateProductModal = ({
       };
 
       onCreate(newFormData);
-
       onClose();
     } catch (error) {
       console.error(t("createproductmodal.uploadfail"), error);
@@ -121,7 +126,7 @@ const CreateProductModal = ({
             {t("createproductmodal.price")}
           </label>
           <input
-            type="number"
+            type="text" // Changed from number to text
             name="price"
             placeholder={t("createproductmodal.Price")}
             onChange={handleChange}
@@ -138,7 +143,7 @@ const CreateProductModal = ({
             {t("createproductmodal.stockqty")}
           </label>
           <input
-            type="number"
+            type="text" // Changed from number to text to allow comma decimal separator
             name="stockQuantity"
             placeholder={t("createproductmodal.stockqty")}
             onChange={handleChange}
@@ -155,7 +160,7 @@ const CreateProductModal = ({
             {t("createproductmodal.rating")}
           </label>
           <input
-            type="number"
+            type="text" // Optionally change to text if you want similar behavior for rating
             name="rating"
             placeholder={t("createproductmodal.rating")}
             onChange={handleChange}
@@ -177,6 +182,7 @@ const CreateProductModal = ({
             onChange={handleImageChange}
             className="block w-full mb-2 p-2 border-gray-500 border-2 rounded-md bg-white dark:bg-gray-900 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
           {/* LOADER */}
           {isLoading && (
             <div className="flex justify-center mb-4">

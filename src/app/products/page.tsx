@@ -172,32 +172,35 @@ const Products = () => {
                 {t("product.updatestock")}
               </button>
 
-              {/* STOCK UPDATE INPUT FIELD */}
-              {editingProduct === product.productId && (
-                <div className="mt-2 flex flex-col items-center">
-                  <input
-                    type="number"
-                    value={newStock ?? ""}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value, 10);
-                      setNewStock(isNaN(value) ? null : value);
-                    }}
-                    min={0} // Minimum of 0 to prevent negative values
-                    className="border px-2 py-1 rounded w-20 text-center text-gray-900  bg-white  placeholder-gray-400"
-                    placeholder={t("product.newstock")}
-                  />
-                  <button
-                    className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    onClick={() => handleUpdateStock(product.productId, newStock)}
-                  >
-                    {isUpdatingStock ? (
-                      <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 dark:border-blue-300 border-solid rounded-full"></div>
-                    ) : (
-                      t("product.confirm")
-                    )}
-                  </button>
-                </div>
-              )}
+             {/* STOCK UPDATE INPUT FIELD */}
+{editingProduct === product.productId && (
+  <div className="mt-2 flex flex-col items-center">
+    <input
+      type="text" // Changed from "number" to "text" to allow comma entries
+      value={newStock ?? ""}
+      onChange={(e) => {
+        // Replace comma with dot to support both "10,5" and "10.5" formats.
+        const inputVal = e.target.value.replace(",", ".");
+        const value = parseFloat(inputVal);
+        setNewStock(isNaN(value) ? null : value);
+      }}
+      // Optionally remove min attribute or use custom validation in onChange
+      className="border px-2 py-1 rounded w-20 text-center text-gray-900 bg-white placeholder-gray-400"
+      placeholder={t("product.newstock")}
+    />
+    <button
+      className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+      onClick={() => handleUpdateStock(product.productId, newStock)}
+    >
+      {isUpdatingStock ? (
+        <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 dark:border-blue-300 border-solid rounded-full"></div>
+      ) : (
+        t("product.confirm")
+      )}
+    </button>
+  </div>
+)}
+
             </div>
           </div>
         ))}
