@@ -33,7 +33,8 @@ const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
-  const [newStock, setNewStock] = useState<number | null>(null);
+  // Store newStock as a string to capture user input like "10,5"
+  const [newStock, setNewStock] = useState<string>("");
   const [isUpdatingStock, setIsUpdatingStock] = useState(false); // State to track stock update loading
 
   const router = useRouter();
@@ -72,15 +73,17 @@ const Products = () => {
       toast.error(t("product.failcreate"), { duration: 4000 });
     }
   };
+  
+  // Update the handleUpdateStock function to parse the string input on update.
+  const handleUpdateStock = async (productId: string) => {
+    // Replace any comma with a dot and parse to a float.
+    const parsedStock = parseFloat(newStock.replace(",", "."));
 
-  // Removed the unused "currentStock" parameter
-  const handleUpdateStock = async (productId: string, newStock: number | null) => {
-    if (newStock === null || isNaN(newStock)) {
+    if (isNaN(parsedStock)) {
       toast.error(t("product.validqty"));
       return;
     }
-
-    if (newStock < 0) {
+    if (parsedStock < 0) {
       toast.error(t("product.qtynegative"));
       return;
     }
@@ -88,11 +91,11 @@ const Products = () => {
     setIsUpdatingStock(true);
 
     try {
-      await updateProductStock({ productId, stockQuantity: newStock }).unwrap();
+      await updateProductStock({ productId, stockQuantity: parsedStock }).unwrap();
       await refetch(); // Refetch after stock update
       toast.success(t("product.stockupdated"));
       setEditingProduct(null);
-      setNewStock(null);
+      setNewStock(""); // Clear the input after update
     } catch {
       toast.error(t("product.failupdated"));
     } finally {
@@ -172,35 +175,28 @@ const Products = () => {
                 {t("product.updatestock")}
               </button>
 
-             {/* STOCK UPDATE INPUT FIELD */}
-{editingProduct === product.productId && (
-  <div className="mt-2 flex flex-col items-center">
-    <input
-      type="text" // Changed from "number" to "text" to allow comma entries
-      value={newStock ?? ""}
-      onChange={(e) => {
-        // Replace comma with dot to support both "10,5" and "10.5" formats.
-        const inputVal = e.target.value.replace(",", ".");
-        const value = parseFloat(inputVal);
-        setNewStock(isNaN(value) ? null : value);
-      }}
-      // Optionally remove min attribute or use custom validation in onChange
-      className="border px-2 py-1 rounded w-20 text-center text-gray-900 bg-white placeholder-gray-400"
-      placeholder={t("product.newstock")}
-    />
-    <button
-      className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-      onClick={() => handleUpdateStock(product.productId, newStock)}
-    >
-      {isUpdatingStock ? (
-        <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 dark:border-blue-300 border-solid rounded-full"></div>
-      ) : (
-        t("product.confirm")
-      )}
-    </button>
-  </div>
-)}
-
+              {/* STOCK UPDATE INPUT FIELD */}
+              {editingProduct === product.productId && (
+                <div className="mt-2 flex flex-col items-center">
+                  <input
+                    type="text" // Use "text" to allow comma as decimal separator
+                    value={newStock}
+                    onChange={(e) => setNewStock(e.target.value)}
+                    className="border px-2 py-1 rounded w-20 text-center text-gray-900 bg-white placeholder-gray-400"
+                    placeholder={t("product.newstock")}
+                  />
+                  <button
+                    className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onClick={() => handleUpdateStock(product.productId)}
+                  >
+                    {isUpdatingStock ? (
+                      <div className="animate-spin h-5 w-5 border-t-2 border-blue-500 dark:border-blue-300 border-solid rounded-full"></div>
+                    ) : (
+                      t("product.confirm")
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}

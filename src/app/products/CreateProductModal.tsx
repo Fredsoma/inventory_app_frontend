@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useCreateProductMutation } from "@/state/api";
+
 type ProductFormData = {
   name: string;
   price: number;
@@ -26,33 +27,26 @@ const CreateProductModal = ({
   onCreate,
 }: CreateProductModalProps) => {
   const { t } = useTranslation();
+  // Store the numeric fields as strings so the user input is kept intact
   const [formData, setFormData] = useState({
     productId: v4(),
     name: "",
-    price: 0,
-    stockQuantity: 0,
-    rating: 0,
+    price: "0", // as string
+    stockQuantity: "0", // as string
+    rating: "0", // as string
     imageUrl: "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update change handler to keep the raw value as string
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // For numeric fields, normalize the value by replacing commas with dots
-    if (name === "price" || name === "stockQuantity" || name === "rating") {
-      const normalizedValue = value.replace(",", ".");
-      setFormData({
-        ...formData,
-        [name]: parseFloat(normalizedValue),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
+    setFormData({
+      ...formData,
+      [name]: value, // Keep as string; conversion is done on submit
+    });
   };
 
   // Handle image file change
@@ -63,7 +57,7 @@ const CreateProductModal = ({
     }
   };
 
-  // Handle form submission
+  // On form submission, convert numeric fields to numbers after replacing commas with dots.
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -76,9 +70,12 @@ const CreateProductModal = ({
         uploadedImageUrl = (await UPLOAD_IPFS_IMAGE(imageFile)) ?? "";
       }
 
-      // Create a new form data object with the uploaded image URL
-      const newFormData = {
-        ...formData,
+      // Convert the numeric string values to numbers (handling comma as the decimal separator)
+      const newFormData: ProductFormData = {
+        name: formData.name,
+        price: parseFloat(formData.price.replace(",", ".")),
+        stockQuantity: parseFloat(formData.stockQuantity.replace(",", ".")),
+        rating: parseFloat(formData.rating.replace(",", ".")),
         imageUrl: uploadedImageUrl,
       };
 
@@ -126,7 +123,7 @@ const CreateProductModal = ({
             {t("createproductmodal.price")}
           </label>
           <input
-            type="text" // Changed from number to text
+            type="text" // Use "text" to allow the comma as decimal separator
             name="price"
             placeholder={t("createproductmodal.Price")}
             onChange={handleChange}
@@ -143,7 +140,7 @@ const CreateProductModal = ({
             {t("createproductmodal.stockqty")}
           </label>
           <input
-            type="text" // Changed from number to text to allow comma decimal separator
+            type="text" // Use "text" for decimal support
             name="stockQuantity"
             placeholder={t("createproductmodal.stockqty")}
             onChange={handleChange}
@@ -160,7 +157,7 @@ const CreateProductModal = ({
             {t("createproductmodal.rating")}
           </label>
           <input
-            type="text" // Optionally change to text if you want similar behavior for rating
+            type="text" // Use "text" to allow comma decimal separator
             name="rating"
             placeholder={t("createproductmodal.rating")}
             onChange={handleChange}
